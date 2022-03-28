@@ -1,10 +1,10 @@
 package blockchain
 
 type Account struct {
-	address [32]byte
-	balance uint
+	Address string
+	Balance uint
 }
 
 func (a *Account) add(amount uint) {
-	a.balance += amount
+	a.Balance += amount
 }

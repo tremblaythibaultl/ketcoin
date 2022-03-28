@@ -7,35 +7,51 @@ import (
 )
 
 type transaction struct {
-	sender   string
-	receiver string
-	data     string
+	Sender   string
+	Receiver string
+	Data     string
 }
 
-type block struct {
-	index        uint64
-	hash         string
-	prevHash     string
-	timestamp    int64
-	txns         []transaction
-	nonce        int
-	minerAddress [32]byte
+type mempool struct {
+	pendingTxns []transaction
 }
 
-func (b *block) prettyPrint() string {
-	var s = fmt.Sprintf("Block %d@%d hash %s\n", b.index, b.timestamp, b.hash)
-	for i := 0; i < len(b.txns); i++ {
-		s += fmt.Sprintf("txn %d from %s to %s : %s\n", i, b.txns[i].sender, b.txns[i].receiver, b.txns[i].data)
+type Block struct {
+	Index        uint64
+	Hash         string
+	PrevHash     string
+	Timestamp    int64
+	Txns         []transaction
+	Nonce        int
+	MinerAddress string
+}
+
+func (b *Block) prettyPrint() string {
+	var s = fmt.Sprintf("Block %d@%d hash %s\n", b.Index, b.Timestamp, b.Hash)
+	for i := 0; i < len(b.Txns); i++ {
+		s += fmt.Sprintf("txn %d from %s to %s : %s\n", i, b.Txns[i].Sender, b.Txns[i].Receiver, b.Txns[i].Data)
 	}
 	return s
 }
 
-func (b *block) toString() string {
-	return fmt.Sprintf("%d%s%d", b.index, b.prevHash, b.nonce)
+func (b *Block) toString() string {
+	return fmt.Sprintf("%d%s%d", b.Index, b.PrevHash, b.Nonce)
 }
 
-// computeHash computes the block's hash. Used in mining.
-func (b *block) computeHash() string {
+// ComputeHash computes the Block's hash. Used in mining.
+func (b *Block) ComputeHash() string {
 	h := sha256.Sum256([]byte(b.toString()))
 	return hex.EncodeToString(h[:])
+}
+
+func (b *Block) GetIndex() uint64 {
+	return b.Index
+}
+
+func (b *Block) mine() bool {
+	for invalid := true; invalid; invalid = b.ComputeHash()[0:1] != "0" { //hardcoded difficulty for testing purposes
+		fmt.Println(b.ComputeHash())
+		b.Nonce++
+	}
+	return false
 }

@@ -1,6 +1,4 @@
-// TODO : rewrite code
-// TODO : create handlers for bc request, txn request, block broadcast
-
+// TODO : handlers for txn request
 package main
 
 import (
@@ -25,7 +23,7 @@ func initNode() {
 
 	node := p2p.MakeNode(uint16(*listenPort))
 	node.Init(target)
-	//go node.Run()
+	go node.Start()
 
 	log.Printf("Try connecting to this node using \"./src -l %d -t 127.0.0.1:%d\"", *listenPort+1, *listenPort)
 	select {}
