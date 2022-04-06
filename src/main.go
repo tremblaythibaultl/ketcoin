@@ -1,4 +1,5 @@
-// TODO : handlers for txn request
+//TODO : save account to file
+
 package main
 
 import (
@@ -14,6 +15,7 @@ func main() {
 func initNode() {
 	listenPort := flag.Int("l", 0, "Port to listen on for new connections")
 	target := flag.String("t", "", "Target peer to connect to at first")
+	keys := flag.String("k", "", "File containing key information in JSON format")
 
 	flag.Parse()
 
@@ -22,7 +24,7 @@ func initNode() {
 	}
 
 	node := p2p.MakeNode(uint16(*listenPort))
-	node.Init(target)
+	node.Init(target, keys)
 	go node.Start()
 
 	log.Printf("Try connecting to this node using \"./src -l %d -t 127.0.0.1:%d\"", *listenPort+1, *listenPort)

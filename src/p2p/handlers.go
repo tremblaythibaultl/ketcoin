@@ -1,52 +1,59 @@
 package p2p
 
 import (
-	"bytes"
-	"encoding/base64"
-	"encoding/gob"
+	"encoding/hex"
+	"encoding/json"
 	"ketcoin/src/blockchain"
 	"log"
 	"net"
 )
 
-func (n *Node) blockReceptionHandler(g string) {
-	buf := new(bytes.Buffer)
-	byteData, err := base64.StdEncoding.DecodeString(g)
+func (n *Node) transactionRequestHandler(JSON []byte) {
+	txn := &blockchain.Transaction{}
+
+	err := json.Unmarshal(JSON, txn)
 	if err != nil {
-		log.Println("Error during decoding")
-		log.Println(err)
-	}
-	buf.Write(byteData)
-	b := blockchain.Block{}
-	err = gob.NewDecoder(buf).Decode(&b)
-	if err != nil {
-		log.Println("Error while ungobbing block")
+		log.Println("Error while decoding transaction")
 		log.Println(err)
 	}
 
-	n.validateBlock(&b)
+	if n.validateTransaction(txn) {
+		log.Println("Transaction validated, adding it to the mempool")
+		n.mutex.Lock()
+		n.mempool[hex.EncodeToString(txn.Hash[:])] = *txn
+		n.mutex.Unlock()
+	} else {
+		log.Println("Transaction invalid : insufficient balance. Ignoring...")
+	}
+
 }
 
-func (n *Node) blockchainReceptionHandler(g string) {
-	buf := new(bytes.Buffer)
-	byteData, err := base64.StdEncoding.DecodeString(g)
+func (n *Node) blockReceptionHandler(JSON []byte) {
+	block := &blockchain.Block{}
+	err := json.Unmarshal(JSON, block)
 	if err != nil {
-		log.Println("Error during decoding")
-		log.Println(err)
-	}
-	buf.Write(byteData)
-	bc := blockchain.Blockchain{}
-	err = gob.NewDecoder(buf).Decode(&bc)
-	if err != nil {
-		log.Println("Error while ungobbing blockchain")
+		log.Println("Error during decoding block")
 		log.Println(err)
 	}
 
-	n.validateBlockchain(&bc)
+	n.validateBlock(block)
+}
+
+func (n *Node) blockchainReceptionHandler(JSON []byte) {
+	bc := &blockchain.Blockchain{}
+
+	err := json.Unmarshal(JSON, bc)
+	if err != nil {
+		log.Println("Error while decoding blockchain")
+		log.Println(err)
+	}
+
+	n.validateBlockchain(bc)
 }
 
 func (n *Node) blockchainRequestHandler(conn net.Conn) {
 	log.Printf("Received bcrq from %s", conn.RemoteAddr())
+
 	log.Println("Starting blockchain transfer...")
 
 	msg, err := n.getBlockchainAsMessage()

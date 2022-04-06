@@ -20,9 +20,10 @@ func (bc *Blockchain) Init(a *Account) {
 		Index:        0,
 		Hash:         "",
 		PrevHash:     "",
-		Timestamp:    time.Now().Unix(),
+		Timestamp:    time.Now(),
 		Txns:         nil,
 		Nonce:        0,
+		Reward:       BLOCK_REWARD,
 		MinerAddress: a.Address,
 	}
 	// Add genesis block to chain
@@ -31,7 +32,7 @@ func (bc *Blockchain) Init(a *Account) {
 	bc.Accounts = make(map[string]*Account)
 	bc.Accounts[a.Address] = a
 	// Add block reward to node's account
-	a.add(BLOCK_REWARD)
+	a.Balance += BLOCK_REWARD
 }
 
 func (bc *Blockchain) IsValid() bool {
@@ -58,10 +59,17 @@ func (bc *Blockchain) ReplaceChain(other *Blockchain) {
 	bc.Accounts = other.Accounts //will this import accounts too?
 }
 
+// well-defined on a non-zero sized blockchain
 func (bc *Blockchain) GetLastIndex() uint64 {
 	bc.RLock()
 	defer bc.RUnlock()
 	return bc.Chain[len(bc.Chain)-1].Index
+}
+
+func (bc *Blockchain) GetLastBlock() *Block {
+	bc.RLock()
+	defer bc.RUnlock()
+	return bc.Chain[len(bc.Chain)-1]
 }
 
 //Encapsulation mutex function to avoid blockchain encoding errors

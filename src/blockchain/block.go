@@ -4,32 +4,34 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"ketcoin/src/crypto"
+	"time"
 )
 
-type transaction struct {
-	Sender   string
-	Receiver string
-	Data     string
-}
-
-type mempool struct {
-	pendingTxns []transaction
+type Transaction struct {
+	Sender    string
+	Receiver  string
+	Amount    uint64
+	Timestamp time.Time
+	Signature *crypto.MssSignature
+	Hash      [32]byte
 }
 
 type Block struct {
 	Index        uint64
 	Hash         string
 	PrevHash     string
-	Timestamp    int64
-	Txns         []transaction
+	Timestamp    time.Time
+	Txns         []Transaction
 	Nonce        int
+	Reward       int
 	MinerAddress string
 }
 
 func (b *Block) prettyPrint() string {
-	var s = fmt.Sprintf("Block %d@%d hash %s\n", b.Index, b.Timestamp, b.Hash)
+	s := fmt.Sprintf("Block %d@%d hash %s\n", b.Index, b.Timestamp, b.Hash)
 	for i := 0; i < len(b.Txns); i++ {
-		s += fmt.Sprintf("txn %d from %s to %s : %s\n", i, b.Txns[i].Sender, b.Txns[i].Receiver, b.Txns[i].Data)
+		s += fmt.Sprintf("txn %d from %s to %s : %s\n", i, b.Txns[i].Sender, b.Txns[i].Receiver, b.Txns[i].Amount)
 	}
 	return s
 }
@@ -44,14 +46,7 @@ func (b *Block) ComputeHash() string {
 	return hex.EncodeToString(h[:])
 }
 
-func (b *Block) GetIndex() uint64 {
-	return b.Index
-}
-
-func (b *Block) mine() bool {
-	for invalid := true; invalid; invalid = b.ComputeHash()[0:1] != "0" { //hardcoded difficulty for testing purposes
-		fmt.Println(b.ComputeHash())
-		b.Nonce++
-	}
-	return false
+func (t *Transaction) ComputeHash() [32]byte {
+	s := fmt.Sprintf("%s%s%d%d", t.Sender, t.Receiver, t.Amount, t.Timestamp.Unix())
+	return sha256.Sum256([]byte(s))
 }

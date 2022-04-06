@@ -16,8 +16,8 @@ const w = 16 // Winternitz parameter
 const t = 18 // computed in function of n and w
 
 type oneTimeSig struct {
-	signatureKey [t][n]byte
-	publicKey    [t][n]byte
+	SignatureKey [t][n]byte
+	PublicKey    [t][n]byte
 }
 
 func newWots() *oneTimeSig {
@@ -39,7 +39,7 @@ func skInit(wots *oneTimeSig) {
 			b := make([]byte, 8)
 			binary.BigEndian.PutUint64(b, rvalue)
 			for k := 0; k < 8; k++ {
-				wots.signatureKey[i][j+k] = b[k]
+				wots.SignatureKey[i][j+k] = b[k]
 			}
 		}
 	}
@@ -48,11 +48,11 @@ func skInit(wots *oneTimeSig) {
 // Initializes the OTS public key from the signature key
 func pkInit(wots *oneTimeSig) {
 	for i := 0; i < t; i++ {
-		key := wots.signatureKey[i]
+		key := wots.SignatureKey[i]
 		for j := 0; j < int(math.Pow(2, w)-1); j++ {
 			key = sha256.Sum256(key[:])
 		}
-		wots.publicKey[i] = key
+		wots.PublicKey[i] = key
 	}
 }
 
@@ -81,7 +81,7 @@ func wotsSign(wots *oneTimeSig, digest [n]byte) [t][n]byte {
 	var bitStrings = computeBitStrings(digest)
 	var signature [t][n]byte
 	for i := 0; i < t; i++ {
-		sig := wots.signatureKey[i]
+		sig := wots.SignatureKey[i]
 		for j := uint16(0); j < bitStrings[i]; j++ {
 			sig = sha256.Sum256(sig[:])
 		}
