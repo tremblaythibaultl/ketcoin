@@ -380,20 +380,10 @@ func (n *Node) Init(target *string, keys *string) {
 		}
 	}()
 
-	//d := [32]byte{53, 53, 57, 56, 52, 49, 54, 57, 53, 55, 51, 49, 48, 97, 57, 50, 97, 100, 56, 51, 50, 100, 99, 50, 54, 53, 56, 48, 51, 51, 98, 48}
-
-	//merkleTree := crypto.NewMSS()
-	//signature := merkleTree.Sign(d)
-	//crypto.Verify(signature, *(*[32]byte)(merkleTree.GetPublicKey()), d)
-	//signature2 := merkleTree.Sign(sha256.Sum256(d[:]))
-	//crypto.Verify(signature2, *(*[32]byte)(merkleTree.GetPublicKey()), sha256.Sum256(d[:]))
-
 	//TODO : remove this
-	if *target == "127.0.0.1:13337" {
+	if *target != "" {
 		go n.simulateLocalTxns()
 		go n.simulateTxnRq()
-	} else if *target == "127.0.0.1:13338" {
-		go n.simulateLocalTxns()
 	}
 }
 
@@ -402,7 +392,7 @@ func (n *Node) simulateLocalTxns() {
 	log.Println("Simulating local txns...")
 	t := &blockchain.Transaction{
 		Sender:    hex.EncodeToString(n.sigTree.GetPublicKey()),
-		Receiver:  "4e20527b08de0fb77e3fe6b1b6273f69e0628030cb184263edc1f5d13c15c62a",
+		Receiver:  "13e1cf6b5b61055550fa30be5c64b4a3420208a34645d90093047495abfab583",
 		Amount:    1,
 		Timestamp: time.Now(),
 	}
@@ -431,7 +421,7 @@ func (n *Node) simulateTxnRq() {
 			if isValid {
 				t := &blockchain.Transaction{
 					Sender:    hex.EncodeToString(n.sigTree.GetPublicKey()),
-					Receiver:  "4e20527b08de0fb77e3fe6b1b6273f69e0628030cb184263edc1f5d13c15c62a",
+					Receiver:  "13e1cf6b5b61055550fa30be5c64b4a3420208a34645d90093047495abfab583",
 					Amount:    1,
 					Timestamp: time.Now(),
 				}
