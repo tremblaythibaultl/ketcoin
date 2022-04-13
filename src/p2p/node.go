@@ -47,8 +47,31 @@ func (n *Node) Start() {
 }
 
 func (n *Node) validateTransaction(t *blockchain.Transaction) bool {
+	var valid bool
+	if acc, exists := n.blockchain.Accounts[t.Sender]; exists {
+		valid = acc.Balance-t.Amount >= 0
+		if acc.Balance-t.Amount < 0 {
+			log.Printf("Invalid transaction ; insufficient balance")
+		}
+	} else {
+		acc = &blockchain.Account{
+			Address: t.Sender,
+			Balance: 0,
+		}
+		n.blockchain.Accounts[t.Sender] = acc
+		valid = false
+	}
+	if valid {
+		addr := make([]byte, 32)
+		hex.Decode(addr, []byte(t.Sender))
+
+		valid = crypto.Verify(t.Signature, *(*[32]byte)(addr), *(*[32]byte)([]byte(t.Hash)))
+		if !valid {
+			log.Printf("Invalid transaction ; incorrect signature")
+		}
+	}
 	log.Println(n.blockchain.Accounts[t.Sender])
-	return n.blockchain.Accounts[t.Sender].Balance-t.Amount > 0
+	return valid
 }
 
 func (n *Node) getTransactionList() []blockchain.Transaction {
@@ -355,15 +378,25 @@ func (n *Node) Init(target *string, keys *string) {
 		}
 	}()
 
+	//d := [32]byte{53, 53, 57, 56, 52, 49, 54, 57, 53, 55, 51, 49, 48, 97, 57, 50, 97, 100, 56, 51, 50, 100, 99, 50, 54, 53, 56, 48, 51, 51, 98, 48}
+
+	//merkleTree := crypto.NewMSS()
+	//signature := merkleTree.Sign(d)
+	//crypto.Verify(signature, *(*[32]byte)(merkleTree.GetPublicKey()), d)
+	//signature2 := merkleTree.Sign(sha256.Sum256(d[:]))
+	//crypto.Verify(signature2, *(*[32]byte)(merkleTree.GetPublicKey()), sha256.Sum256(d[:]))
+
 	//TODO : remove this
 	if *target == "127.0.0.1:13337" {
 		go n.simulateLocalTxns()
-
 		go n.simulateTxnRq()
+	} else if *target == "127.0.0.1:13338" {
+		go n.simulateLocalTxns()
 	}
 }
 
 func (n *Node) simulateLocalTxns() {
+	time.Sleep(time.Second)
 	log.Println("Simulating local txns...")
 	t := &blockchain.Transaction{
 		Sender:    hex.EncodeToString(n.sigTree.GetPublicKey()),
@@ -372,7 +405,9 @@ func (n *Node) simulateLocalTxns() {
 		Timestamp: time.Now(),
 	}
 	t.Hash = t.ComputeHash()
+
 	t.Signature = n.sigTree.Sign(*(*[32]byte)([]byte(t.Hash)))
+
 	transactionData, err := json.Marshal(t)
 	if err != nil {
 		log.Println("Error encoding transaction data")

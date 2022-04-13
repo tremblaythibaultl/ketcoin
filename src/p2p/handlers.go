@@ -22,7 +22,7 @@ func (n *Node) transactionRequestHandler(JSON []byte) {
 		n.mempool[txn.Hash[:]] = *txn
 		n.mutex.Unlock()
 	} else {
-		log.Println("Transaction invalid : insufficient balance. Ignoring...")
+		log.Println("Transaction invalid : insufficient balance or invalid signature. Ignoring...")
 	}
 
 }

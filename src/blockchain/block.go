@@ -48,7 +48,7 @@ func (b *Block) ComputeHash() string {
 }
 
 func (t *Transaction) ComputeHash() string {
-	s := fmt.Sprintf("%s%s%d%d%d", t.Sender, t.Receiver, t.Amount, t.Timestamp.Unix())
+	s := fmt.Sprintf("%s%s%d%d", t.Sender, t.Receiver, t.Amount, t.Timestamp.Unix())
 	h := sha256.Sum256([]byte(s))
 	return hex.EncodeToString(h[:])
 }
