@@ -14,7 +14,7 @@ type Transaction struct {
 	Amount    uint64
 	Timestamp time.Time
 	Signature *crypto.MssSignature
-	Hash      [32]byte
+	Hash      string
 }
 
 type Block struct {
@@ -23,6 +23,7 @@ type Block struct {
 	PrevHash     string
 	Timestamp    time.Time
 	Txns         []Transaction
+	StateRoot    string
 	Nonce        int
 	Reward       int
 	MinerAddress string
@@ -46,7 +47,8 @@ func (b *Block) ComputeHash() string {
 	return hex.EncodeToString(h[:])
 }
 
-func (t *Transaction) ComputeHash() [32]byte {
-	s := fmt.Sprintf("%s%s%d%d", t.Sender, t.Receiver, t.Amount, t.Timestamp.Unix())
-	return sha256.Sum256([]byte(s))
+func (t *Transaction) ComputeHash() string {
+	s := fmt.Sprintf("%s%s%d%d%d", t.Sender, t.Receiver, t.Amount, t.Timestamp.Unix())
+	h := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(h[:])
 }

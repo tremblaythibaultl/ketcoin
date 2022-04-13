@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"ketcoin/src/blockchain"
 	"log"
@@ -20,7 +19,7 @@ func (n *Node) transactionRequestHandler(JSON []byte) {
 	if n.validateTransaction(txn) {
 		log.Println("Transaction validated, adding it to the mempool")
 		n.mutex.Lock()
-		n.mempool[hex.EncodeToString(txn.Hash[:])] = *txn
+		n.mempool[txn.Hash[:]] = *txn
 		n.mutex.Unlock()
 	} else {
 		log.Println("Transaction invalid : insufficient balance. Ignoring...")

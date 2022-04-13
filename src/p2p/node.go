@@ -71,27 +71,11 @@ func (n *Node) generateBlock() *blockchain.Block {
 		Timestamp:    time.Now(),
 		Txns:         n.getTransactionList(),
 		Nonce:        0,
+		Reward:       blockchain.BLOCK_REWARD,
 		MinerAddress: n.account.Address,
 	}
 
 	return b
-}
-
-func (n *Node) execute(b *blockchain.Block) {
-	for _, t := range b.Txns {
-		n.blockchain.Accounts[t.Sender].Balance -= t.Amount
-
-		if acc, exists := n.blockchain.Accounts[t.Receiver]; exists {
-			acc.Balance += t.Amount
-		} else {
-			acc = &blockchain.Account{
-				Address: t.Receiver,
-				Balance: t.Amount,
-			}
-			n.blockchain.Accounts[t.Receiver] = acc
-		}
-		delete(n.mempool, hex.EncodeToString(t.Hash[:]))
-	}
 }
 
 func (n *Node) broadcastBlock(b *blockchain.Block) {
@@ -116,12 +100,23 @@ func (n *Node) broadcastBlock(b *blockchain.Block) {
 
 }
 
+func (n *Node) printState() {
+	for _, acc := range n.blockchain.Accounts {
+		log.Println(acc)
+	}
+}
+
 func (n *Node) mine() {
 	log.Println("currently mining")
 	for {
+		sleepCounter := 0
 		for len(n.mempool) == 0 {
 			time.Sleep(time.Second)
 			log.Println("mempool empty")
+			sleepCounter++
+			if (sleepCounter % 5) == 0 {
+				n.printState()
+			}
 		}
 
 		txnNb := len(n.mempool)
@@ -146,8 +141,10 @@ func (n *Node) mine() {
 		log.Printf("Found good nonce for block!")
 		n.blockchain.Lock()
 		n.execute(b)
+		b.StateRoot = n.blockchain.GetStateRoot()
 		n.broadcastBlock(b)
 		n.blockchain.Unlock()
+		n.blockchain.AddBlock(b)
 	}
 }
 
@@ -189,11 +186,66 @@ func (n *Node) send(conn net.Conn, m *Message) {
 	}
 }
 
+func (n *Node) execute(b *blockchain.Block) {
+	for _, t := range b.Txns {
+		if acc, exists := n.blockchain.Accounts[t.Sender]; exists {
+			acc.Balance -= t.Amount
+		} else {
+			acc = &blockchain.Account{
+				Address: t.Receiver,
+				Balance: -t.Amount,
+			}
+			n.blockchain.Accounts[t.Receiver] = acc
+		}
+
+		if acc, exists := n.blockchain.Accounts[t.Receiver]; exists {
+			acc.Balance += t.Amount
+		} else {
+			acc = &blockchain.Account{
+				Address: t.Receiver,
+				Balance: t.Amount,
+			}
+			n.blockchain.Accounts[t.Receiver] = acc
+		}
+		//safe?
+		delete(n.mempool, t.Hash[:])
+	}
+
+	if acc, exists := n.blockchain.Accounts[b.MinerAddress]; exists {
+		acc.Balance += blockchain.BLOCK_REWARD
+	} else {
+		acc = &blockchain.Account{
+			Address: b.MinerAddress,
+			Balance: blockchain.BLOCK_REWARD,
+		}
+		n.blockchain.Accounts[b.MinerAddress] = acc
+	}
+}
+
 func (n *Node) validateBlock(b *blockchain.Block) {
 	if b.ComputeHash()[0:1] == "0" && b.Index == n.blockchain.GetLastBlock().Index+1 {
-		log.Println("Received block validated, appending to chain")
-		//TODO : execute block, remove transactions from mempool
-		n.blockchain.AddBlock(b)
+		log.Println("Received block validated, executing transactions...")
+		n.execute(b)
+
+		if n.blockchain.GetStateRoot() != b.StateRoot {
+			log.Println("Printing state : ")
+			n.printState()
+
+			log.Printf("local SR after execution : \n%s\nBlock SR : \n%s", n.blockchain.GetStateRoot(), b.StateRoot)
+			log.Println("State roots don't match, requesting bc...")
+
+			n.peers.Range(func(key, value interface{}) bool {
+				isActive := value.(bool)
+				conn := key.(net.Conn)
+				if isActive {
+					n.requestBlockchain(conn)
+					return false
+				}
+				return true
+			})
+		} else {
+			n.blockchain.AddBlock(b)
+		}
 	} else {
 		log.Println("Received block not valid, ignoring...")
 	}
@@ -205,6 +257,8 @@ func (n *Node) validateBlockchain(bc *blockchain.Blockchain) {
 		if bc.IsValid() {
 			log.Println("Received blockchain is longer and valid, replacing blockchain...")
 			n.blockchain.ReplaceChain(bc)
+		} else {
+			log.Println("Received blockchain is invalid! ignoring...")
 		}
 	} else {
 		log.Println("Received blockchain has lower or equal index, ignoring...")
@@ -302,9 +356,10 @@ func (n *Node) Init(target *string, keys *string) {
 	}()
 
 	//TODO : remove this
-	if *target != "" {
-		//n.simulateTxnRq()
-		n.simulateLocalTxns()
+	if *target == "127.0.0.1:13337" {
+		go n.simulateLocalTxns()
+
+		go n.simulateTxnRq()
 	}
 }
 
@@ -312,12 +367,12 @@ func (n *Node) simulateLocalTxns() {
 	log.Println("Simulating local txns...")
 	t := &blockchain.Transaction{
 		Sender:    hex.EncodeToString(n.sigTree.GetPublicKey()),
-		Receiver:  "a731fc8f3fb137ef0469aa8177012a8ca630032c07b5c2f48d25278d6a2084b",
+		Receiver:  "4e20527b08de0fb77e3fe6b1b6273f69e0628030cb184263edc1f5d13c15c62a",
 		Amount:    1,
 		Timestamp: time.Now(),
 	}
 	t.Hash = t.ComputeHash()
-	t.Signature = n.sigTree.Sign(t.Hash)
+	t.Signature = n.sigTree.Sign(*(*[32]byte)([]byte(t.Hash)))
 	transactionData, err := json.Marshal(t)
 	if err != nil {
 		log.Println("Error encoding transaction data")
@@ -328,20 +383,22 @@ func (n *Node) simulateLocalTxns() {
 
 //send txn request to send one coin to target, 5 times, to each peer
 func (n *Node) simulateTxnRq() {
+	time.Sleep(time.Second * 10)
 	log.Println("Simulating txns")
 	for i := 0; i < 5; i++ {
+		time.Sleep(time.Second)
 		n.peers.Range(func(k, v interface{}) bool {
 			conn := k.(net.Conn)
 			isValid := v.(bool)
 			if isValid {
 				t := &blockchain.Transaction{
 					Sender:    hex.EncodeToString(n.sigTree.GetPublicKey()),
-					Receiver:  "a731fc8f3fb137ef0469aa8177012a8ca630032c07b5c2f48d25278d6a2084b",
+					Receiver:  "4e20527b08de0fb77e3fe6b1b6273f69e0628030cb184263edc1f5d13c15c62a",
 					Amount:    1,
 					Timestamp: time.Now(),
 				}
 				t.Hash = t.ComputeHash()
-				t.Signature = n.sigTree.Sign(t.Hash)
+				t.Signature = n.sigTree.Sign(*(*[32]byte)([]byte(t.Hash)))
 
 				transactionData, err := json.Marshal(t)
 				if err != nil {

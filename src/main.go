@@ -1,5 +1,3 @@
-//TODO : save account to file
-
 package main
 
 import (

@@ -1,7 +1,10 @@
 package blockchain
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 )
@@ -18,7 +21,6 @@ type Blockchain struct {
 func (bc *Blockchain) Init(a *Account) {
 	b := &Block{
 		Index:        0,
-		Hash:         "",
 		PrevHash:     "",
 		Timestamp:    time.Now(),
 		Txns:         nil,
@@ -26,6 +28,7 @@ func (bc *Blockchain) Init(a *Account) {
 		Reward:       BLOCK_REWARD,
 		MinerAddress: a.Address,
 	}
+	b.Hash = b.ComputeHash()
 	// Add genesis block to chain
 	bc.Chain = append(bc.Chain, b)
 	// Initialize map and add node's account to address => account mapping
@@ -40,6 +43,7 @@ func (bc *Blockchain) IsValid() bool {
 		if bc.Chain[i+1].Index-1 != bc.Chain[i].Index ||
 			bc.Chain[i+1].PrevHash != bc.Chain[i].Hash ||
 			bc.Chain[i].Hash != bc.Chain[i].ComputeHash() {
+			log.Printf("idxs : %d - %d\nh1 : \n%s\n%s\nh2 : \n%s\n%s\n", bc.Chain[i+1].Index-1, bc.Chain[i].Index, bc.Chain[i+1].PrevHash, bc.Chain[i].Hash, bc.Chain[i].Hash, bc.Chain[i].ComputeHash())
 			return false
 		}
 	}
@@ -57,6 +61,16 @@ func (bc *Blockchain) ReplaceChain(other *Blockchain) {
 	defer bc.Unlock()
 	bc.Chain = other.Chain
 	bc.Accounts = other.Accounts //will this import accounts too?
+}
+
+func (bc *Blockchain) GetStateRoot() string {
+	s := ""
+	for _, acc := range bc.Accounts {
+		s += fmt.Sprintf("%s%d", acc.Address, acc.Balance)
+	}
+	h := sha256.Sum256([]byte(s))
+
+	return hex.EncodeToString(h[:])
 }
 
 // well-defined on a non-zero sized blockchain
