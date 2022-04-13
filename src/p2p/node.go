@@ -64,8 +64,10 @@ func (n *Node) validateTransaction(t *blockchain.Transaction) bool {
 	if valid {
 		addr := make([]byte, 32)
 		hex.Decode(addr, []byte(t.Sender))
+		hash := make([]byte, 32)
+		hex.Decode(hash, []byte(t.Hash))
 
-		valid = crypto.Verify(t.Signature, *(*[32]byte)(addr), *(*[32]byte)([]byte(t.Hash)))
+		valid = crypto.Verify(t.Signature, *(*[32]byte)(addr), *(*[32]byte)(hash))
 		if !valid {
 			log.Printf("Invalid transaction ; incorrect signature")
 		}
@@ -405,8 +407,9 @@ func (n *Node) simulateLocalTxns() {
 		Timestamp: time.Now(),
 	}
 	t.Hash = t.ComputeHash()
-
-	t.Signature = n.sigTree.Sign(*(*[32]byte)([]byte(t.Hash)))
+	hash := make([]byte, 32)
+	hex.Decode(hash, []byte(t.Hash))
+	t.Signature = n.sigTree.Sign(*(*[32]byte)(hash))
 
 	transactionData, err := json.Marshal(t)
 	if err != nil {
@@ -433,7 +436,9 @@ func (n *Node) simulateTxnRq() {
 					Timestamp: time.Now(),
 				}
 				t.Hash = t.ComputeHash()
-				t.Signature = n.sigTree.Sign(*(*[32]byte)([]byte(t.Hash)))
+				hash := make([]byte, 32)
+				hex.Decode(hash, []byte(t.Hash))
+				t.Signature = n.sigTree.Sign(*(*[32]byte)(hash))
 
 				transactionData, err := json.Marshal(t)
 				if err != nil {
