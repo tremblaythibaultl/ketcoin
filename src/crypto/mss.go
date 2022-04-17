@@ -10,7 +10,7 @@ import (
 // Merkle signature scheme parameters
 
 // nbMessages lets this instance of the MSS sign at most nbMessages messages. The height of the tree is lg(nbMessages).
-const nbMessages = 8
+const nbMessages = 1024
 
 // height of the tree. nbMessages is 2^height.
 const height = 3
