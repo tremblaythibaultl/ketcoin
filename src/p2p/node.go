@@ -214,11 +214,15 @@ func (n *Node) send(conn net.Conn, m *Message) {
 func (n *Node) execute(b *blockchain.Block) {
 	for _, t := range b.Txns {
 		if acc, exists := n.blockchain.Accounts[t.Sender]; exists {
-			acc.Balance -= t.Amount
+			if acc.Balance >= t.Amount {
+				acc.Balance -= t.Amount
+			} else {
+				acc.Balance = 0
+			}
 		} else {
 			acc = &blockchain.Account{
 				Address: t.Receiver,
-				Balance: -t.Amount,
+				Balance: 0,
 			}
 			n.blockchain.Accounts[t.Receiver] = acc
 		}
@@ -413,7 +417,7 @@ func (n *Node) simulateLocalTxns() {
 func (n *Node) simulateTxnRq() {
 	time.Sleep(time.Second * 10)
 	log.Println("Simulating txns")
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 1; i++ {
 		time.Sleep(time.Second)
 		n.peers.Range(func(k, v interface{}) bool {
 			conn := k.(net.Conn)
