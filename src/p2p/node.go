@@ -387,7 +387,7 @@ func (n *Node) Init(target *string, keys *string) {
 	//TODO : remove this
 	if *target != "" {
 		go n.simulateLocalTxns()
-		go n.simulateTxnRq()
+		//go n.simulateTxnRq()
 	}
 }
 
@@ -396,7 +396,7 @@ func (n *Node) simulateLocalTxns() {
 	log.Println("Simulating local txns...")
 	t := &blockchain.Transaction{
 		Sender:    hex.EncodeToString(n.sigTree.GetPublicKey()),
-		Receiver:  "13e1cf6b5b61055550fa30be5c64b4a3420208a34645d90093047495abfab583",
+		Receiver:  "a33e14a8aa2522b758823536c05c894199feeb3b49ca98650edf3fee2336fb2e",
 		Amount:    1,
 		Timestamp: time.Now(),
 	}
@@ -425,7 +425,7 @@ func (n *Node) simulateTxnRq() {
 			if isValid {
 				t := &blockchain.Transaction{
 					Sender:    hex.EncodeToString(n.sigTree.GetPublicKey()),
-					Receiver:  "13e1cf6b5b61055550fa30be5c64b4a3420208a34645d90093047495abfab583",
+					Receiver:  "a33e14a8aa2522b758823536c05c894199feeb3b49ca98650edf3fee2336fb2e",
 					Amount:    1,
 					Timestamp: time.Now(),
 				}

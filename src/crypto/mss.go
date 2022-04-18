@@ -13,7 +13,7 @@ import (
 const nbMessages = 1024
 
 // height of the tree. nbMessages is 2^height.
-const height = 3
+const height = 10
 
 // Main tree for the Merkle signature scheme. This object is the secret key.
 type MerkleSigTree struct {
