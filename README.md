@@ -1,7 +1,7 @@
 # |coin> 
 ## About
 ketcoin is a toy blockchain prototype implementing a post-quantum cryptosystem 
-developed as a project to better understand the inner workings of bockchain 
+developed as a project to better understand the inner workings of blockchain 
 systems, peer-to-peer communication and post-quantum cryptography.
 
 This project authored by Louis Tremblay Thibault and distributed under the 
