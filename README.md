@@ -24,4 +24,4 @@ the following :
 
 
 This last line is not guaranteed to work all the time (as I will not be 
-maintaining a seed node) but you are free to start your own network is you wish to.
+maintaining a seed node) but you are free to start your own network if you wish to.
