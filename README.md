@@ -4,7 +4,7 @@ ketcoin is a toy blockchain prototype implementing a post-quantum cryptosystem
 developed as a project to better understand the inner workings of blockchain 
 systems, peer-to-peer communication and post-quantum cryptography. 
 
-This project authored by Louis Tremblay Thibault and distributed under the 
+This project is authored by Louis Tremblay Thibault and distributed under the 
 MIT license.
 
 The cryptographic library developed for this project can be found [here](https://github.com/tremblaythibaultl/AMSS).
@@ -26,4 +26,4 @@ This last line is not guaranteed to work all the time (as the seed node will
 not be maintained at all times) but you are free to start your own network 
 if you wish to.
 
-*This code is not tread-safe and secure to use as of right now.*
+*This code is neither thread-safe nor secure as of right now.*
