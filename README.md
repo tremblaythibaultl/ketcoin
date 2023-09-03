@@ -3,8 +3,8 @@
 ketcoin is a toy blockchain prototype based on a post-quantum cryptosystem 
 developed as a project to better understand the inner workings of blockchain 
 systems, peer-to-peer communication and post-quantum cryptography. 
-This project was realised within the frame of the course IFT4055 and a written
-report can be found [here](https://github.com/tremblaythibaultl/IFT4055/blob/main/rapport.pdf).
+This project was realized within the frame of the course [IFT4055](https://admission.umontreal.ca/cours-et-horaires/cours/ift-4055/)
+and a written report can be found [here](https://github.com/tremblaythibaultl/IFT4055/blob/main/rapport.pdf).
 
 This project is authored by Louis Tremblay Thibault and distributed under the 
 MIT license.
